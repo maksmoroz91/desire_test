@@ -63,13 +63,14 @@ class PaymentController {
                     id: paymentData.id,
                 },
                 data: {
-                    externalPaymentId: yooKassaResponse.id,
+                    externalPaymentId: yooKassaResponse.data.id,
                 },
             })
 
             return res.status(200).json({
                 status: 'Ok',
                 data: {
+                    paymentId: paymentData.id,
                     confirmationUrl:
                         yooKassaResponse.data.confirmation.confirmation_url,
                 },
@@ -98,6 +99,66 @@ class PaymentController {
             return res.status(500).json({
                 status: 'Fail',
                 message: 'Internal server error',
+                e,
+            })
+        }
+    }
+
+    async webhook(req: Request, res: Response) {
+        try {
+            const { object } = req.body
+
+            if (!object || !object.id || !object.metadata) {
+                return res.status(200).json({
+                    status: 'OK',
+                    message: 'Invalid webhook data',
+                })
+            }
+
+            const paymentData = await DBProvider.payment.findFirst({
+                where: {
+                    externalPaymentId: object.id,
+                },
+            })
+
+            if (!paymentData) {
+                console.error('Payment not found for webhook:', {
+                    externalId: object.id,
+                    metadata: object.metadata,
+                })
+
+                return res.status(200).json({
+                    status: 'OK',
+                    message: 'Payment not found',
+                })
+            }
+
+            const updatePaymentData = await DBProvider.$transaction(
+                async (tx) => {
+                    const updated = await tx.payment.update({
+                        where: { id: paymentData.id },
+                        data: { status: object.status },
+                    })
+                    await tx.paymentLock.delete({
+                        where: { userId: updated.userId },
+                    })
+
+                    return updated
+                }
+            )
+
+            return res.status(200).json({
+                status: 'OK',
+                data: {
+                    paymentId: updatePaymentData.id,
+                    status: updatePaymentData.status,
+                },
+            })
+        } catch (e) {
+            return res.status(500).json({
+                status: 'Fail',
+                message: 'Internal server error',
+                e,
             })
         }
     }
