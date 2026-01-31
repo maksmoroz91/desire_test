@@ -25,11 +25,11 @@ model User {
 model Payment {
   id                Int           @id @default(autoincrement())
   userId            Int
-  amount            Int
+  amount            Decimal       @db.Decimal(10, 2)
   idempotencyKey    String        @unique
   currency          String        @default("RUB")
-  status            PaymentStatus @default(PENDING)
-  externalPaymentId String
+  status            PaymentStatus @default(pending)
+  externalPaymentId String?
   createdAt         DateTime      @default(now())
   updatedAt         DateTime      @updatedAt
   user              User          @relation(fields: [userId], references: [id], onDelete: Restrict)
@@ -41,7 +41,7 @@ model PaymentLock {
 }
 
 enum PaymentStatus {
-  PENDING
-  SUCCEEDED
-  CANCELED
+  pending
+  succeeded
+  canceled
 }
