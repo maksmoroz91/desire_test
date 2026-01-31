@@ -81,7 +81,8 @@ class PaymentController {
                 e.code === 'P2002'
             ) {
                 return res.status(409).json({
-                    status: 'Payment already in progress',
+                    status: 'Fail',
+                    message: 'Payment already in progress',
                 })
             }
 
@@ -110,7 +111,7 @@ class PaymentController {
 
             if (!object || !object.id || !object.metadata) {
                 return res.status(200).json({
-                    status: 'OK',
+                    status: 'Ok',
                     message: 'Invalid webhook data',
                 })
             }
@@ -128,7 +129,7 @@ class PaymentController {
                 })
 
                 return res.status(200).json({
-                    status: 'OK',
+                    status: 'Ok',
                     message: 'Payment not found',
                 })
             }
@@ -148,7 +149,7 @@ class PaymentController {
             )
 
             return res.status(200).json({
-                status: 'OK',
+                status: 'Ok',
                 data: {
                     paymentId: updatePaymentData.id,
                     status: updatePaymentData.status,
